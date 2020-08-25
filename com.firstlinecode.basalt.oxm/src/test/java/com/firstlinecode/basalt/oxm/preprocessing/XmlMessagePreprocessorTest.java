@@ -1,5 +1,6 @@
 package com.firstlinecode.basalt.oxm.preprocessing;
 
+import com.firstlinecode.basalt.protocol.core.Keepalive;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -7,6 +8,8 @@ import com.firstlinecode.basalt.oxm.TestData;
 import com.firstlinecode.basalt.oxm.xml.preprocessing.XmlMessagePreprocessor;
 
 import junit.framework.Assert;
+
+import java.util.Arrays;
 
 public class XmlMessagePreprocessorTest {
 	private ITextMessagePreprocessor preprocessor;
@@ -27,11 +30,26 @@ public class XmlMessagePreprocessorTest {
 	private String uncompletedMessagePart3 = TestData.getData(this.getClass(), "uncompletedMessagePart3");
 	private String uncompletedMessagePart4 = TestData.getData(this.getClass(), "uncompletedMessagePart4");
 	
+//	private String keepalive = "   ";
+	private String keepalive = "$";
+	
 	@Before
 	public void before() {
 		preprocessor = new XmlMessagePreprocessor(1024 * 1024);
 	}
-	
+
+	@Test
+	public void parse2() throws Exception {
+//		String message = keepalive + complexMessage + keepalive + openStreamMessage + keepalive + simpleMessage + keepalive + closeStreamMessage + keepalive + uncompletedMessagePart1;
+		String message = keepalive;
+		char[] chars = message.toCharArray();
+		System.out.println(message);
+		String[] result = preprocessor.process(chars, chars.length);
+		for (String s : result) {
+			System.out.println(s);
+		}
+	}
+
 	@Test
 	public void parse() throws Exception {
 		String message = complexMessage + simpleMessage;
@@ -43,28 +61,29 @@ public class XmlMessagePreprocessorTest {
 		Assert.assertEquals(complexMessage.trim(), result[0]);
 		Assert.assertEquals(simpleMessage.trim(), result[1]);
 		Assert.assertEquals(0, preprocessor.getBuffer().length);
-		
-		message = complexMessage + openStreamMessage + simpleMessage +
-				closeStreamMessage + uncompletedMessagePart1;
+
+		message =  keepalive + complexMessage + keepalive + openStreamMessage + keepalive + simpleMessage + keepalive + closeStreamMessage + keepalive + uncompletedMessagePart1;
 		
 		chars = message.toCharArray();
 		result = preprocessor.process(chars, chars.length);
 
-		Assert.assertEquals(4, result.length);
-		Assert.assertEquals(complexMessage.trim(), result[0]);
-		Assert.assertEquals(openStreamMessage.trim().substring(22, openStreamMessage.length()), result[1]);
-		Assert.assertEquals(simpleMessage.trim(), result[2]);
-		Assert.assertEquals(closeStreamMessage.trim(), result[3]);
+		Assert.assertEquals(5, result.length);
+		Assert.assertEquals(Keepalive.MESSAGE, result[0]);
+		Assert.assertEquals(complexMessage.trim(), result[1]);
+		Assert.assertEquals(openStreamMessage.trim().substring(22, openStreamMessage.length()), result[2]);
+		Assert.assertEquals(simpleMessage.trim(), result[3]);
+		Assert.assertEquals(closeStreamMessage.trim(), result[4]);
 		Assert.assertEquals(uncompletedMessagePart1, new String(preprocessor.getBuffer()));
 		
-		message = uncompletedMessagePart2 + anotherSimpleMessage;
+		message = uncompletedMessagePart2 + keepalive + anotherSimpleMessage + keepalive;
 		
 		chars = message.toCharArray();
 		result = preprocessor.process(chars, chars.length);
 		
-		Assert.assertEquals(2, result.length);
+		Assert.assertEquals(3, result.length);
 		Assert.assertEquals((uncompletedMessagePart1 + uncompletedMessagePart2).trim(), result[0]);
-		Assert.assertEquals(anotherSimpleMessage.trim(), result[1]);
+		Assert.assertEquals(Keepalive.MESSAGE, result[1]);
+		Assert.assertEquals(anotherSimpleMessage.trim(), result[2]);
 		Assert.assertEquals(0, preprocessor.getBuffer().length);
 		
 		chars = firstCharBrokenMessagePart1.toCharArray();

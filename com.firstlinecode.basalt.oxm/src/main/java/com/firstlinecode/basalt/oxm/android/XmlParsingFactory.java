@@ -4,10 +4,7 @@ import com.firstlinecode.basalt.oxm.Attribute;
 import com.firstlinecode.basalt.oxm.Value;
 import com.firstlinecode.basalt.oxm.parsers.core.stanza.StanzaParser;
 import com.firstlinecode.basalt.oxm.parsing.*;
-import com.firstlinecode.basalt.protocol.core.IError;
-import com.firstlinecode.basalt.protocol.core.Protocol;
-import com.firstlinecode.basalt.protocol.core.ProtocolChain;
-import com.firstlinecode.basalt.protocol.core.ProtocolException;
+import com.firstlinecode.basalt.protocol.core.*;
 import com.firstlinecode.basalt.protocol.core.stanza.Stanza;
 import com.firstlinecode.basalt.protocol.core.stanza.error.ServiceUnavailable;
 import com.firstlinecode.basalt.protocol.core.stanza.error.StanzaError;
@@ -85,6 +82,9 @@ public class XmlParsingFactory extends AbstractParsingFactory {
     @Override
     public Object parse(String message, boolean stream) {
         try {
+            if (Keepalive.MESSAGE.equals(message)) {
+                return new Keepalive();
+            }
             message = message.trim();
 
             StringBuilder sb = new StringBuilder();
